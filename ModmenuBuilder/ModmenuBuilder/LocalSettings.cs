@@ -22,4 +22,11 @@ public class LocalSettings
     
     [SliderFloatElement("StalwartShell Options", "Recoil", 0f, 25f)]
     public float stalwartShellRecoil = 20f;
+    
+    [ButtonElement("StalwartShell Options", "Reset Defaults", "")]
+    public void Reset()
+    {
+        stalwartShellRecoil = 20f;
+        //no need to call update here. i do it on invoke
+    }
 }

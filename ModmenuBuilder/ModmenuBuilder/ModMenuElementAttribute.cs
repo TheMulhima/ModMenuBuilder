@@ -21,7 +21,10 @@ public class BoolElementAttribute : ModMenuElementAttribute
 {
     public BoolElementAttribute(string menuName, string elementName, string elementDesc) : base(menuName, elementName, elementDesc) { }
 }
-
+public class ButtonElementAttribute : ModMenuElementAttribute
+{
+    public ButtonElementAttribute(string menuName, string elementName, string elementDesc) : base(menuName, elementName, elementDesc) { }
+}
 public class SliderFloatElementAttribute : ModMenuElementAttribute
 {
     public float MinValue;

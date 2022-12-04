@@ -14,6 +14,7 @@ public static class ModMenu
     
     //gets all the fields that have our custom atribute (that also means if you dont add the attribute, it wont be in the menu
     public static FieldInfo[] GSFields = typeof(LocalSettings).GetFields().Where(f => f.GetCustomAttribute<ModMenuElementAttribute>() != null).ToArray();
+    public static MethodInfo[] GSMethods = typeof(LocalSettings).GetMethods().Where(f => f.GetCustomAttribute<ModMenuElementAttribute>() != null).ToArray();
 
     //make it use your mods settings
     public static LocalSettings Settings => ModMenuBuilder.LS;
@@ -30,7 +31,7 @@ public static class ModMenu
         });
 
         // key: menu name, value: list of fields 
-        Dictionary<string, List<FieldInfo>> menuScreenNameList = new Dictionary<string, List<FieldInfo>>();
+        Dictionary<string, List<MemberInfo>> menuScreenNameList = new Dictionary<string, List<MemberInfo>>();
 
         //im not too sure about the order on which they are so im gonna loop through myself
         foreach (var field in GSFields)
@@ -44,7 +45,21 @@ public static class ModMenu
             }
             else
             {
-                menuScreenNameList[menuName] = new List<FieldInfo>() { field };
+                menuScreenNameList[menuName] = new List<MemberInfo>() { field };
+            }
+        }
+        foreach (var method in GSMethods)
+        {
+            //garunteed to be there from the where above
+            var menuName = method.GetCustomAttribute<ModMenuElementAttribute>().MenuName;
+
+            if (menuScreenNameList.TryGetValue(menuName, out var list))
+            {
+                list.Add(method);
+            }
+            else
+            {
+                menuScreenNameList[menuName] = new List<MemberInfo>() { method };
             }
         }
 
@@ -59,61 +74,83 @@ public static class ModMenu
         //we create the menu screen
         MainMenu = MenuRef.GetMenuScreen(modListMenu);
 
-        foreach (var (menuScreenName, fields) in menuScreenNameList)
+        foreach (var (menuScreenName, members) in menuScreenNameList)
         {
             var extraMenu = new Menu(menuScreenName);
 
-            foreach (var field in fields)
+            foreach (var member in members)
             {
-                if (field.FieldType == typeof(float))
+                if (member is FieldInfo field)
                 {
-                    var info = field.GetCustomAttribute<SliderFloatElementAttribute>();
-                    if (info == null)
+                    if (field.FieldType == typeof(float))
                     {
-                        Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                        var info = field.GetCustomAttribute<SliderFloatElementAttribute>();
+                        if (info == null)
+                        {
+                            Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                        }
+                        else
+                        {
+                            extraMenu.AddElement(new CustomSlider(
+                                info.ElementName,
+                                f => { field.SetValue(Settings, f); },
+                                () => (float)field.GetValue(Settings),
+                                info.MinValue,
+                                info.MaxValue,
+                                false));
+                        }
                     }
-                    else
+                    else if (field.FieldType == typeof(int))
                     {
-                        extraMenu.AddElement(new CustomSlider(
-                            info.ElementName,
-                    f => { field.SetValue(Settings, f); },
-                    () => (float)field.GetValue(Settings),
-                            info.MinValue,
-                            info.MaxValue, 
-                            false));
+                        var info = field.GetCustomAttribute<SliderIntElementAttribute>();
+                        if (info == null)
+                        {
+                            Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                        }
+                        else
+                        {
+                            extraMenu.AddElement(new CustomSlider(
+                                info.ElementName,
+                                f => { field.SetValue(Settings, (int)f); },
+                                () => (int)field.GetValue(Settings),
+                                info.MinValue,
+                                info.MaxValue,
+                                true));
+                        }
+                    }
+                    else if (field.FieldType == typeof(bool))
+                    {
+                        var info = field.GetCustomAttribute<BoolElementAttribute>();
+                        if (info == null)
+                        {
+                            Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                        }
+                        else
+                        {
+                            extraMenu.AddElement(Blueprints.HorizontalBoolOption(info.ElementName,
+                                info.ElementDesc,
+                                (b) => field.SetValue(Settings, b),
+                                () => (bool)field.GetValue(Settings)));
+                        }
                     }
                 }
-                else if (field.FieldType == typeof(int))
+                else if (member is MethodInfo method)
                 {
-                    var info = field.GetCustomAttribute<SliderIntElementAttribute>();
+                    var info = method.GetCustomAttribute<ButtonElementAttribute>();
                     if (info == null)
                     {
-                        Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                        Modding.Logger.LogError($"Wrong attribute assigned to {method.Name}");
                     }
                     else
                     {
-                        extraMenu.AddElement(new CustomSlider(
+                        extraMenu.AddElement(new MenuButton(
                             info.ElementName,
-                    f => { field.SetValue(Settings, (int)f);},
-                    () => (int)field.GetValue(Settings),
-                            info.MinValue,
-                            info.MaxValue, 
-                            true));
-                    }
-                }
-                else if (field.FieldType == typeof(bool))
-                {
-                    var info = field.GetCustomAttribute<BoolElementAttribute>();
-                    if (info == null)
-                    {
-                        Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
-                    }
-                    else
-                    {
-                        extraMenu.AddElement(Blueprints.HorizontalBoolOption(info.ElementName,
                             info.ElementDesc,
-                            (b) => field.SetValue(Settings, b),
-                            () => (bool)field.GetValue(Settings)));
+                            _ =>
+                            {
+                                method.Invoke(Settings, null);
+                                extraMenu.Update();
+                            }));
                     }
                 }
             }
