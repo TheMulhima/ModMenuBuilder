@@ -2,7 +2,7 @@
 
 namespace ModMenuBuilder;
 
-//your gs/ls class doesnt matter
+//your gs/ls class doesnt matter whcih it is
 public class LocalSettings
 {
     [SliderFloatElement("GrubSong Options", "Soul", 0f, 25f)] 
