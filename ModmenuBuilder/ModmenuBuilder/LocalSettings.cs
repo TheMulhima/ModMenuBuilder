@@ -23,6 +23,9 @@ public class LocalSettings
     [SliderFloatElement("StalwartShell Options", "Recoil", 0f, 25f)]
     public float stalwartShellRecoil = 20f;
     
+    [InputFloatElement("StalwartShell Options", "Recoil2", 0f, 25f)]
+    public float stalwartShellRecoil2 = 20f;
+    
     [ButtonElement("StalwartShell Options", "Reset Defaults", "")]
     public void Reset()
     {

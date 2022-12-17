@@ -37,6 +37,25 @@ public class SliderFloatElementAttribute : ModMenuElementAttribute
         MaxValue = maxValue;
     }
 }
+
+public class InputFloatElementAttribute : ModMenuElementAttribute
+{
+    public float MinValue;
+    public float MaxValue;
+    public float DefaultValue; //when input is empty
+    public string PlaceHolder;
+    public int CharacterLimit;
+
+    public InputFloatElementAttribute(string menuName, string elementName, float minValue, float maxValue, float defaultValue = 0f, string placeHolder = "", int characterLimit = 7) :
+        base(menuName, elementName, "")
+    {
+        MinValue = minValue;
+        MaxValue = maxValue;
+        DefaultValue = defaultValue;
+        PlaceHolder = placeHolder;
+        CharacterLimit = characterLimit;
+    }
+}
 public class SliderIntElementAttribute : ModMenuElementAttribute
 {
     public int MinValue;

@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using Satchel.BetterMenus;
+using UnityEngine;
 
 namespace ModMenuBuilder;
 
@@ -84,20 +85,41 @@ public static class ModMenu
                 {
                     if (field.FieldType == typeof(float))
                     {
-                        var info = field.GetCustomAttribute<SliderFloatElementAttribute>();
-                        if (info == null)
+                        var info = field.GetCustomAttribute<ModMenuElementAttribute>();
+                        if (info is SliderFloatElementAttribute sliderInfo)
                         {
-                            Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
+                            extraMenu.AddElement(new CustomSlider(
+                                sliderInfo.ElementName,
+                                f => { field.SetValue(Settings, f); },
+                                () => (float)field.GetValue(Settings),
+                                sliderInfo.MinValue,
+                                sliderInfo.MaxValue,
+                                false));
+                        }
+                        else if (info is InputFloatElementAttribute inputInfo)
+                        {
+                            extraMenu.AddElement(Blueprints.FloatInputField(
+                                inputInfo.ElementName,
+                                f =>
+                                {
+                                    f = Mathf.Clamp(f, inputInfo.MinValue, inputInfo.MaxValue);
+                                    field.SetValue(Settings, f);
+                                    var elem = ((InputField)extraMenu?.Find(inputInfo.ElementName));
+                                    if (elem != null)
+                                    {
+                                        elem.userInput = f.ToString();
+                                    }
+                                },
+                                () => (float)field.GetValue(Settings),
+                                inputInfo.DefaultValue,
+                                inputInfo.PlaceHolder,
+                                inputInfo.CharacterLimit,
+                                Id: inputInfo.ElementName
+                            ));
                         }
                         else
                         {
-                            extraMenu.AddElement(new CustomSlider(
-                                info.ElementName,
-                                f => { field.SetValue(Settings, f); },
-                                () => (float)field.GetValue(Settings),
-                                info.MinValue,
-                                info.MaxValue,
-                                false));
+                            Modding.Logger.LogError($"Wrong attribute assigned to {field.Name}");
                         }
                     }
                     else if (field.FieldType == typeof(int))
